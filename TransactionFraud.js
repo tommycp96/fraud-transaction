@@ -1,46 +1,34 @@
-const convertArrayToObject = (array, key) => {
-  const initialValue = {};
-  return array.reduce((obj, item) => {
-    return {
-      ...obj,
-      [item[key]]: item
-    };
-  }, initialValue);
+const convertArrayToObject = (array) => {
+  let obj = array.reduce((prevObj, item) => {
+    const line = item.split(',');
+    const person = line[0];
+
+    line.shift();
+    line[0] = Number(line[0]);
+
+    prevObj[person] = [...(prevObj[person] || []), [...line]].sort();
+
+    return prevObj;
+  }, {});
+
+  return Object.fromEntries(Object.entries(obj).sort());
 };
 
 const TIME = 0;
 const CITY = 2;
-const DIFF = 30;
+const DIFF = 60;
 
 const checkInvalidTransactions = (data) => {
-  const trans = data.map((tran) => {
-    let separated = tran.split(',');
-    let obj = {
-      sender: separated[0],
-      time: separated[1],
-      amount: separated[2],
-      city: separated[3]
-    };
-    return obj;
-  });
-  console.log(
-    '🚀 ~ file: TransactionFraud.js ~ line 25 ~ trans ~ trans',
-    trans
-  );
-  const groupedTransaction = convertArrayToObject(trans, 'sender');
-  console.log(
-    '🚀 ~ file: TransactionFraud.js ~ line 63 ~ checkInvalidTransactions ~ groupedTransaction',
-    groupedTransaction
-  );
+  const groupedTransaction = convertArrayToObject(data);
   let fraudulentTransactions = [];
-  Object.entries(groupedTransaction).forEach(([name, transactions]) => {
+  Object.entries(groupedTransaction).forEach(([sender, transactions]) => {
     const len = transactions.length;
     let found = false; // avoid double insertion if 3 consecutive frauds detected
     transactions.forEach((current, index) => {
       if (index <= len - 2 && current[CITY] !== transactions[index + 1][CITY]) {
         if (transactions[index + 1][TIME] - current[TIME] <= DIFF) {
-          if (!found) fraudulentTransactions.push([name, ...current]);
-          fraudulentTransactions.push([name, ...transactions[index + 1]]);
+          if (!found) fraudulentTransactions.push([sender, ...current]);
+          fraudulentTransactions.push([sender, ...transactions[index + 1]]);
           found = true;
         } else {
           found = false;
@@ -52,13 +40,13 @@ const checkInvalidTransactions = (data) => {
 };
 
 const transactions = [
-  'bob,627,1973,surabaya',
-  'alice,387,885,jakarta',
-  'alice,355,1029,bali',
-  'alice,587,402,jakarta',
-  'charlie,973,830,manado',
-  'alice,932,86,jakarta',
-  'bob,188,989,surabaya'
+  'bob,627,1973,amsterdam',
+  'alex,387,885,bangkok',
+  'alex,355,1029,barcelona',
+  'alex,587,402,bangkok',
+  'chalicefy,973,830,barcelona',
+  'alex,932,86,bangkok',
+  'bob,188,989,amsterdam'
 ];
 
-console.log(checkInvalidTransactions(transactions));
+console.log('fraud transactions:', checkInvalidTransactions(transactions));
